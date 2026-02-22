@@ -2,7 +2,15 @@
 
 > AI 短剧生成系统的交互式演示页面
 
-**在线体验：[https://furalike.cn/cinemaker/](https://furalike.cn/cinemaker/)**
+### 成品效果
+
+**[姜小卷的周一，普通又认真的打工人日常 - 小红书](https://www.xiaohongshu.com/discovery/item/6999f9390000000015031bfa?source=webshare&xhsshare=pc_web&xsec_token=AB1YeBV8FFISOWlMopLLgorOWiW83maPlho8zWFMxMoZU=&xsec_source=pc_share)**
+
+以上视频完全由 CineMaker 系统生成（AI 绘图 + AI 视频 + 自动合成），点击可查看最终发布效果。
+
+---
+
+**在线体验编辑器：[https://furalike.cn/cinemaker/](https://furalike.cn/cinemaker/)**
 
 ## 说明
 
