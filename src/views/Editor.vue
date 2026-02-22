@@ -42,8 +42,8 @@
           </el-tag>
         </div>
       </div>
-      <div class="flex-1 flex items-center justify-center p-6 bg-gray-900/5">
-        <div class="relative max-w-2xl w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
+      <div class="flex-1 flex items-center justify-center p-4 bg-gray-900/5 overflow-hidden">
+        <div class="relative h-full max-h-full aspect-[9/16] rounded-lg overflow-hidden shadow-lg bg-black">
           <!-- Video mode -->
           <video
             v-if="showVideo"
@@ -173,7 +173,7 @@
                   :class="selectedFrameIdx === idx ? 'border-blue-500 shadow-md' : 'border-gray-100 hover:border-gray-300'"
                   @click="selectedFrameIdx = idx"
                 >
-                  <img :src="img" class="w-full aspect-[16/9] object-cover" />
+                  <img :src="img" class="w-full aspect-[9/16] object-cover" />
                 </div>
               </div>
             </div>
@@ -214,9 +214,9 @@
                   <img
                     v-if="current.firstFrameImages?.length"
                     :src="current.firstFrameImages[0]"
-                    class="w-full aspect-video object-cover"
+                    class="w-full aspect-[9/16] object-cover"
                   />
-                  <div v-else class="w-full aspect-video flex items-center justify-center text-xs text-gray-400">
+                  <div v-else class="w-full aspect-[9/16] flex items-center justify-center text-xs text-gray-400">
                     请先生成首帧
                   </div>
                 </div>
@@ -230,9 +230,9 @@
                   <img
                     v-if="current.lastFrameImages?.length"
                     :src="current.lastFrameImages[current.lastFrameImages.length - 1]"
-                    class="w-full aspect-video object-cover"
+                    class="w-full aspect-[9/16] object-cover"
                   />
-                  <div v-else class="w-full aspect-video flex items-center justify-center text-xs text-gray-400">
+                  <div v-else class="w-full aspect-[9/16] flex items-center justify-center text-xs text-gray-400">
                     请先生成尾帧
                   </div>
                 </div>
@@ -249,7 +249,7 @@
                 </div>
                 <div class="flex items-center justify-between text-sm">
                   <span class="text-gray-500">分辨率</span>
-                  <span class="text-gray-700">1280×720</span>
+                  <span class="text-gray-700">720×1280</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                   <span class="text-gray-500">时长</span>
