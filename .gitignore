@@ -1,4 +1,96 @@
-node_modules/
-dist/
+# Binaries
+bin/
+cinemaker
+backend
+server
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+huobao-drama*
+
+# Go
+vendor/
+go.work
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+logs/*.pid
+
+# OS
 .DS_Store
-*.local
+Thumbs.db
+
+# Build output
+dist/
+build/
+main
+
+# Temporary
+tmp/
+temp/
+*.pid
+.backend.pid
+.frontend.pid
+
+# Cursor IDE
+.cursor/
+
+# Compiled binary
+drama_generator
+
+# Data - uploaded files (not db)
+data/storage/
+static/
+
+# Database files
+data/cinemaker.db
+data/huobao_drama.db
+data/drama.db
+data/drama_generator.db
+data.db
+drama.db
+huobao_drama.db
+cinemaker.db
+drama.png
+
+# SQLite temp files
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Database backup
+*.db.bak
+
+# Cookies (sensitive)
+data/cookies*.txt
+
+# Frontend
+web/dist/
+web/node_modules/
+web/.vite/
+web/.env.local
+web/coverage/
+
+# Config (use config.example.yaml)
+configs/config.yaml
+
+# Demo (separate repo: CineMaker_Public)
+demo/
+
+# Docker
+DOCKER_PUBLISH.md
+build.sh
