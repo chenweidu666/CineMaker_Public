@@ -5,6 +5,7 @@
         <!-- Left section: Logo + Left slot -->
         <div class="header-left">
           <router-link v-if="showLogo" to="/" class="logo">
+            <img src="/cinemaker-favicon.svg" alt="CineMaker" class="logo-icon" />
             <span class="logo-text">CineMaker</span>
           </router-link>
           <!-- Left slot for business content | 左侧插槽用于业务内容 -->
@@ -195,6 +196,13 @@ const toggleTheme = () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 :deep(.header-btn) {
