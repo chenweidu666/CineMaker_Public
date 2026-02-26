@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/guides/images/cinemaker-logo.svg" alt="CineMaker Logo" width="860" />
+  <img src="https://github.com/chenweidu666.png" alt="CineMaker Logo" width="140" />
 </p>
 
 <p align="center">
@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://furalike.cn/cinemaker/"><strong>在线体验 Demo</strong></a> ·
   <a href="https://furalike.cn/blog/posts/cinemaker-workflow/"><strong>工作流程详解</strong></a> ·
-  <a href="docs/guides/images/episode-1_compressed.mov"><strong>第一集演示视频</strong></a>
+  <a href="https://www.xiaohongshu.com/discovery/item/6999f9390000000015031bfa?source=webshare&xhsshare=pc_web&xsec_token=AB1YeBV8FFISOWlMopLLgorOWiW83maPlho8zWFMxMoZU=&xsec_source=pc_share"><strong>成片展示（小红书）</strong></a>
 </p>
 
 <p align="center">
@@ -21,8 +21,16 @@
 ## 效果展示
 
 - [成品视频：姜小卷的周一，普通又认真的打工人日常（小红书）](https://www.xiaohongshu.com/discovery/item/6999f9390000000015031bfa?source=webshare&xhsshare=pc_web&xsec_token=AB1YeBV8FFISOWlMopLLgorOWiW83maPlho8zWFMxMoZU=&xsec_source=pc_share)
-- [演示视频（docs/Final.mov）](docs/Final.mov)
-- [第一集演示视频（压缩版）](docs/guides/images/episode-1_compressed.mov)
+
+## PV 角色短片
+
+- [叶澜｜把心事都写进旋律里的吟游诗人](docs/剧本/AI女性Vlog/设计/PV/叶澜｜把心事都写进旋律里的吟游诗人.mp4)
+- [夏紫萱｜穿军装驾机甲的二次元少女](docs/剧本/AI女性Vlog/设计/PV/夏紫萱｜穿军装驾机甲的二次元少女.mp4)
+- [梅暗香｜穿裙子也能一脚踢翻你](docs/剧本/AI女性Vlog/设计/PV/梅暗香｜穿裙子也能一脚踢翻你.mp4)
+- [梅暗香｜穿裙子也能一脚踢翻你-1](docs/剧本/AI女性Vlog/设计/PV/梅暗香｜穿裙子也能一脚踢翻你-1.mp4)
+- [温晚｜在音乐里自由落体的慵懒舞者](docs/剧本/AI女性Vlog/设计/PV/温晚｜在音乐里自由落体的慵懒舞者.mp4)
+- [陈樱｜在吧台后面看尽人间故事](docs/剧本/AI女性Vlog/设计/PV/陈樱｜在吧台后面看尽人间故事.mp4)
+- [顾秋雅｜用鼻子写诗的人](docs/剧本/AI女性Vlog/设计/PV/顾秋雅｜用鼻子写诗的人.mp4)
 
 ## 核心特性
 
@@ -32,7 +40,6 @@
 - **参考图驱动一致性**：角色三视图、场景四宫格、道具设定图自动注入生成流程
 - **图片微调编辑器**：快捷指令（修手部、调表情、改光影等）+ 自然语言局部重绘
 - **专业视频编辑器**：时间线拖拽、20+ 转场效果、片段裁剪、键盘快捷键
-- **视频分析**：输入视频自动生成结构化剧本（FFprobe 场景切分 + BigASR 语音识别 + Vision 画面分析）
 - **团队协作**：JWT 认证、多团队数据隔离、成员管理
 - **存储**：默认本地存储（`./data/storage`），开箱即用；保留 Storage 接口抽象，便于扩展
 
@@ -42,7 +49,7 @@
 |------|------|
 | 后端 | Go 1.25, Gin, GORM, SQLite |
 | 前端 | Vue 3, TypeScript, Vite, Element Plus |
-| AI 服务 | 火山引擎（Seedream 图片 / Seedance 视频 / BigASR 语音 / Doubao Vision）、OpenAI 兼容 API |
+| AI 服务 | 火山引擎（Seedream 图片 / Seedance 视频）、OpenAI 兼容 API |
 | 存储 | 本地文件系统（默认） |
 | 部署 | Docker, Docker Compose |
 
@@ -114,7 +121,6 @@ docker compose up -d --build
 | 图片微调 | 快捷编辑指令（修手部/调表情/改光影等）、自然语言局部重绘 |
 | 视频生成 | 单图/首尾帧/多图参考/纯文本模式、AI 生成视频提示词、Seedance 1.5 Pro 深度适配 |
 | 视频合成 | FFmpeg 合并、20+ 转场效果、时间线拖拽、片段裁剪、音频提取、键盘快捷键 |
-| 视频分析 | 五阶段流水线（FFprobe + BigASR + Vision）、实时进度、一键导入为剧本 |
 | 用户系统 | JWT 认证、团队管理、数据隔离、路由守卫、首次部署自动初始化 |
 | 存储 | 本地文件系统（默认）、Storage 接口抽象 |
 | 系统功能 | AI 服务多供应商配置、系统监控仪表盘、图片生成 Debug 模式、图片懒加载 |
@@ -131,7 +137,6 @@ docker compose up -d --build
 <summary>暂时隐藏的功能（前端入口已注释，后端 API 保留）</summary>
 
 - **导入剧本（ZIP）**：从 ZIP 文件导入完整剧本。位置：`DramaList.vue`，API：`POST /api/v1/dramas/import`
-- **视频分析 → 导入为剧本**：将视频分析结果转为剧本项目。位置：`VideoAnalysis.vue`，API：`POST /api/v1/video-analysis/:taskId/import`
 
 </details>
 
@@ -153,7 +158,7 @@ docker compose up -d --build
 │   └── external/ffmpeg/  # FFmpeg 封装（合成·截帧·转码）
 ├── pkg/                  # 共享包
 │   ├── ai/               # LLM 文本生成客户端
-│   ├── asr/              # 语音识别（BigASR）
+│   ├── asr/              # 语音相关客户端
 │   ├── auth/             # 认证上下文、数据隔离 Scope
 │   ├── config/           # 配置加载
 │   ├── errors/           # 错误处理
@@ -185,4 +190,3 @@ docker compose up -d --build
 | [技术架构](docs/guides/2_技术架构.md) | 系统架构、分层设计、AI 集成、数据模型、提示词工程、部署方案 |
 | [提示词指南](docs/guides/3_提示词指南.md) | Seedream 4.0 & Seedance 1.5 Pro 提示词最佳实践 |
 | [火山引擎 API 申请指南](docs/guides/4_火山引擎API申请指南.md) | 从零申请火山引擎 API 密钥并在 CineMaker 中完成配置 |
-| [视频分析](docs/guides/5_视频分析.md) | 自动视频解析 → 结构化剧本的五阶段流程详解 |

@@ -15,15 +15,6 @@
         </template>
         <template #right>
           <el-button
-            @click="goToVideoAnalysis"
-            class="header-btn"
-          >
-            <el-icon>
-              <VideoCamera />
-            </el-icon>
-            <span class="btn-text">视频分析</span>
-          </el-button>
-          <el-button
             @click="goToAILogs"
             class="header-btn"
           >
@@ -282,9 +273,6 @@ const handleCreate = () => (createDialogVisible.value = true);
 const viewDrama = (id: string) => router.push(`/dramas/${id}`);
 const goToAILogs = () => {
   router.push('/ai-logs');
-};
-const goToVideoAnalysis = () => {
-  router.push('/video-analysis');
 };
 
 // Edit dialog state / 编辑对话框状态

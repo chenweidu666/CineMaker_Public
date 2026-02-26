@@ -46,7 +46,7 @@ services:
       - VIDEO_BASE_URL=${VIDEO_BASE_URL:-}
       - VIDEO_MODEL=${VIDEO_MODEL:-}
       - VIDEO_PROVIDER=${VIDEO_PROVIDER:-}
-      # 语音识别（火山引擎 BigASR）
+      # 语音服务配置
       - ASR_APP_ID=${ASR_APP_ID:-}
       - ASR_ACCESS_KEY=${ASR_ACCESS_KEY:-}
       - ASR_RESOURCE_ID=${ASR_RESOURCE_ID:-volc.bigasr.auc}
