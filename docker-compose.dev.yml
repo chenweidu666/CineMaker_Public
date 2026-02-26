@@ -1,0 +1,79 @@
+# 开发模式 Docker Compose
+# 后端：挂载源码 + air 热加载，改 .go 文件自动重编（~5秒）
+# 前端：挂载 web/ + Vite HMR，改前端代码浏览器自动刷新
+services:
+  cinemaker:
+    container_name: cinemaker-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-}
+        GO_PROXY: ${GO_PROXY:-}
+        ALPINE_MIRROR: ${ALPINE_MIRROR:-}
+    ports:
+      - "${PORT:-5678}:5678"
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    environment:
+      - TZ=Asia/Shanghai
+      # AI 服务密钥（环境变量优先，未设置则从数据库配置读取）
+      - TEXT_API_KEY=${TEXT_API_KEY:-}
+      - TEXT_BASE_URL=${TEXT_BASE_URL:-}
+      - TEXT_MODEL=${TEXT_MODEL:-}
+      - TEXT_PROVIDER=${TEXT_PROVIDER:-}
+      - VISION_API_KEY=${VISION_API_KEY:-}
+      - VISION_BASE_URL=${VISION_BASE_URL:-}
+      - VISION_MODEL=${VISION_MODEL:-}
+      - VISION_PROVIDER=${VISION_PROVIDER:-}
+      - IMAGE_API_KEY=${IMAGE_API_KEY:-}
+      - IMAGE_BASE_URL=${IMAGE_BASE_URL:-}
+      - IMAGE_MODEL=${IMAGE_MODEL:-}
+      - IMAGE_PROVIDER=${IMAGE_PROVIDER:-}
+      - VIDEO_API_KEY=${VIDEO_API_KEY:-}
+      - VIDEO_BASE_URL=${VIDEO_BASE_URL:-}
+      - VIDEO_MODEL=${VIDEO_MODEL:-}
+      - VIDEO_PROVIDER=${VIDEO_PROVIDER:-}
+      - ASR_APP_ID=${ASR_APP_ID:-}
+      - ASR_ACCESS_KEY=${ASR_ACCESS_KEY:-}
+      - ASR_RESOURCE_ID=${ASR_RESOURCE_ID:-volc.bigasr.auc}
+      # 存储：默认本地路径
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-q", "-O", "/dev/null", "http://localhost:5678/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    container_name: cinemaker-frontend
+    image: node:22-alpine
+    working_dir: /app
+    ports:
+      - "${FRONTEND_PORT:-3012}:3012"
+    volumes:
+      - ./web:/app
+      - frontend-node-modules:/app/node_modules
+    command: sh -c "npm install --prefer-offline && npm run dev"
+    environment:
+      - TZ=Asia/Shanghai
+      - API_TARGET=http://cinemaker:5678
+    depends_on:
+      cinemaker:
+        condition: service_healthy
+    profiles:
+      - with-frontend
+
+volumes:
+  go-mod-cache:
+    driver: local
+  go-build-cache:
+    driver: local
+  frontend-node-modules:
+    driver: local

@@ -1,0 +1,38 @@
+# 开发专用镜像：Go 编译环境 + air 热加载
+# 源码通过 volume 挂载，不 COPY 进镜像
+ARG DOCKER_REGISTRY=
+ARG GO_PROXY=
+ARG ALPINE_MIRROR=
+
+FROM ${DOCKER_REGISTRY:-}golang:1.25-alpine
+
+ARG GO_PROXY=
+ARG ALPINE_MIRROR=
+
+ENV ALPINE_MIRROR=${ALPINE_MIRROR:-}
+RUN if [ -n "$ALPINE_MIRROR" ]; then \
+    sed -i "s@dl-cdn.alpinelinux.org@$ALPINE_MIRROR@g" /etc/apk/repositories 2>/dev/null || true; \
+    fi
+
+ENV GOPROXY=${GO_PROXY:-https://goproxy.cn,direct}
+ENV GO111MODULE=on
+ENV TZ=Asia/Shanghai
+
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    tzdata \
+    ffmpeg \
+    wget \
+    python3 \
+    py3-pip
+
+RUN pip3 install --break-system-packages yt-dlp
+
+RUN go install github.com/air-verse/air@latest
+
+WORKDIR /app
+
+EXPOSE 5678
+
+CMD ["air", "-c", ".air.toml"]
