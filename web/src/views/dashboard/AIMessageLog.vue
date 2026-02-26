@@ -7,9 +7,9 @@
             <el-button text @click="$router.back()">
               <el-icon><ArrowLeft /></el-icon>
             </el-button>
-            <h2>AI 消息日志</h2>
+            <h2>AI 日志</h2>
           </div>
-          <el-button type="primary" @click="loadData">
+          <el-button v-if="activeTab === 'logs'" type="primary" @click="loadData">
             <el-icon><Refresh /></el-icon>
             刷新
           </el-button>
@@ -17,6 +17,9 @@
       </el-header>
 
       <el-main>
+        <!-- 主 Tab：AI 日志 | AI 配置 -->
+        <el-tabs v-model="activeTab" class="main-tabs">
+          <el-tab-pane label="AI 日志" name="logs">
         <!-- 统计卡片 -->
         <el-row :gutter="16" class="stats-row">
           <el-col :span="6">
@@ -143,6 +146,12 @@
             />
           </div>
         </el-card>
+          </el-tab-pane>
+
+          <el-tab-pane label="配置 API" name="config">
+            <AIConfig embedded />
+          </el-tab-pane>
+        </el-tabs>
       </el-main>
     </el-container>
 
@@ -224,8 +233,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ArrowLeft, Refresh, ChatDotRound, SuccessFilled, CircleCloseFilled, Timer } from '@element-plus/icons-vue'
 import { aiLogAPI, type AIMessageLog, type AILogStats } from '../../api/ai-log'
+import AIConfig from '@/views/settings/AIConfig.vue'
+
+const route = useRoute()
+const activeTab = ref<'logs' | 'config'>(
+  (route.query.tab as string) === 'config' ? 'config' : 'logs'
+)
 
 const loading = ref(false)
 const logs = ref<AIMessageLog[]>([])
@@ -438,6 +454,12 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
+}
+
+.main-tabs {
+  background: var(--bg-card, #fff);
+  border-radius: var(--radius-lg, 8px);
+  padding: var(--space-4);
 }
 
 .table-card {

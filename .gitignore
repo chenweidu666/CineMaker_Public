@@ -42,6 +42,7 @@ main
 # Temporary
 tmp/
 temp/
+output/
 *.pid
 .backend.pid
 .frontend.pid
@@ -86,6 +87,7 @@ web/.env.local
 web/coverage/
 
 # Config (use config.example.yaml)
+config.yaml
 configs/config.yaml
 
 # Demo (separate repo: CineMaker_Public)

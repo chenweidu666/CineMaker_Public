@@ -18,19 +18,8 @@ func NewAuthHandler(authService *services.AuthService, log *logger.Logger) *Auth
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req services.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	result, err := h.authService.Register(&req)
-	if err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	response.Created(c, result)
+	// 开源版本单账号模式：仅支持默认账号登录，不支持注册
+	response.Forbidden(c, "开源版本仅支持默认账号登录，不支持注册新账号")
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {

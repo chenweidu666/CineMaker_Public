@@ -7,6 +7,10 @@
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleLogin">
+        <el-alert type="info" :closable="false" class="auth-hint">
+          默认账号：admin@example.com / admin123，点击登录即可使用
+        </el-alert>
+
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" type="email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
         </el-form-item>
@@ -23,8 +27,7 @@
       </el-form>
 
       <div class="auth-footer">
-        <span>还没有账号？</span>
-        <router-link to="/register" class="auth-link">立即注册</router-link>
+        <span>使用默认账号 admin@example.com / admin123 登录</span>
       </div>
     </div>
   </div>
@@ -43,9 +46,13 @@ const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
+// 默认账号密码，首次启动时后端会自动创建
+const DEFAULT_EMAIL = 'admin@example.com'
+const DEFAULT_PASSWORD = 'admin123'
+
 const form = reactive({
-  email: '',
-  password: ''
+  email: DEFAULT_EMAIL,
+  password: DEFAULT_PASSWORD
 })
 
 const rules: FormRules = {
@@ -137,5 +144,10 @@ async function handleLogin() {
 
 .auth-link:hover {
   text-decoration: underline;
+}
+
+.auth-hint {
+  margin-bottom: 20px;
+  font-size: 13px;
 }
 </style>

@@ -1,8 +1,11 @@
 package services
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -33,6 +36,7 @@ func (s *AIService) GetMessageLogService() *AIMessageLogService {
 }
 
 type CreateAIConfigRequest struct {
+	TeamID        *uint             `json:"-"` // 由 handler 从 context 注入，不接收客户端
 	ServiceType   string            `json:"service_type" binding:"required,oneof=text image video"`
 	Name          string            `json:"name" binding:"required,min=1,max=100"`
 	Provider      string            `json:"provider" binding:"required"`
@@ -61,11 +65,12 @@ type UpdateAIConfigRequest struct {
 }
 
 type TestConnectionRequest struct {
-	BaseURL  string            `json:"base_url" binding:"required,url"`
-	APIKey   string            `json:"api_key" binding:"required"`
-	Model    models.ModelField `json:"model" binding:"required"`
-	Provider string            `json:"provider"`
-	Endpoint string            `json:"endpoint"`
+	BaseURL     string            `json:"base_url" binding:"required,url"`
+	APIKey      string            `json:"api_key" binding:"required"`
+	Model       models.ModelField `json:"model" binding:"required"`
+	Provider    string            `json:"provider"`
+	ServiceType string            `json:"service_type"` // text/image/video，用于选用验证方式
+	Endpoint    string            `json:"endpoint"`
 }
 
 func (s *AIService) CreateConfig(req *CreateAIConfigRequest) (*models.AIServiceConfig, error) {
@@ -110,6 +115,7 @@ func (s *AIService) CreateConfig(req *CreateAIConfigRequest) (*models.AIServiceC
 	}
 
 	config := &models.AIServiceConfig{
+		TeamID:        req.TeamID,
 		ServiceType:   req.ServiceType,
 		Name:          req.Name,
 		Provider:      req.Provider,
@@ -258,27 +264,41 @@ func (s *AIService) DeleteConfig(configID uint) error {
 }
 
 func (s *AIService) TestConnection(req *TestConnectionRequest) error {
-	s.log.Infow("TestConnection called", "baseURL", req.BaseURL, "provider", req.Provider, "endpoint", req.Endpoint, "modelCount", len(req.Model))
+	// 去除 API Key 首尾空格，避免格式校验失败
+	req.APIKey = strings.TrimSpace(req.APIKey)
+	s.log.Infow("TestConnection called", "baseURL", req.BaseURL, "provider", req.Provider, "serviceType", req.ServiceType, "modelCount", len(req.Model))
 
-	// 使用第一个模型进行测试
 	model := ""
 	if len(req.Model) > 0 {
 		model = req.Model[0]
 	}
+
+	// 火山引擎 image/video 配置：使用文本模型验证 API Key（同一 Key 通用）
+	if (req.ServiceType == "image" || req.ServiceType == "video") &&
+		(req.Provider == "doubao" || req.Provider == "volcengine" || req.Provider == "volces") {
+		model = "doubao-1-5-pro-32k-250115"
+		if len(req.Model) > 0 {
+			for _, m := range req.Model {
+				if strings.HasPrefix(m, "doubao") {
+					model = m
+					break
+				}
+			}
+		}
+		s.log.Infow("Using Doubao text model for image/video key validation", "model", model)
+	}
+
 	s.log.Infow("Using model for test", "model", model, "provider", req.Provider)
 
-	// 根据 provider 参数选择客户端
 	var client ai.AIClient
 	var endpoint string
 
 	switch req.Provider {
 	case "gemini", "google":
-		// Gemini
 		s.log.Infow("Using Gemini client", "baseURL", req.BaseURL)
 		endpoint = "/v1beta/models/{model}:generateContent"
 		client = ai.NewGeminiClient(req.BaseURL, req.APIKey, model, endpoint)
-	case "openai":
-		// OpenAI 格式
+	case "openai", "doubao", "volcengine", "volces":
 		s.log.Infow("Using OpenAI-compatible client", "baseURL", req.BaseURL, "provider", req.Provider)
 		endpoint = req.Endpoint
 		if endpoint == "" {
@@ -286,7 +306,6 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 		}
 		client = ai.NewOpenAIClient(req.BaseURL, req.APIKey, model, endpoint)
 	default:
-		// 默认使用 OpenAI 格式
 		s.log.Infow("Using default OpenAI-compatible client", "baseURL", req.BaseURL)
 		endpoint = req.Endpoint
 		if endpoint == "" {
@@ -303,6 +322,88 @@ func (s *AIService) TestConnection(req *TestConnectionRequest) error {
 		s.log.Infow("TestConnection succeeded")
 	}
 	return err
+}
+
+// TestConnectionAllRequest 批量测试请求（火山引擎等同一 Key 通用于文本/图片/视频）
+type TestConnectionAllRequest struct {
+	BaseURL  string `json:"base_url" binding:"required,url"`
+	APIKey   string `json:"api_key" binding:"required"`
+	Provider string `json:"provider" binding:"required"`
+}
+
+// testVolcEndpoint 对指定 endpoint 发 POST，使用不存在的 model，有效 Key 返回 404
+func (s *AIService) testVolcEndpoint(baseURL, apiKey, endpoint, body, serviceName string) error {
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	url := baseURL + endpoint
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBufferString(body))
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("%s 请求失败: %w", serviceName, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return fmt.Errorf("%s 鉴权失败(status %d)，请检查 API Key", serviceName, resp.StatusCode)
+	}
+	if resp.StatusCode != http.StatusNotFound {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyPreview := string(bodyBytes)
+		if len(bodyPreview) > 200 {
+			bodyPreview = bodyPreview[:200] + "..."
+		}
+		return fmt.Errorf("%s 未返回 404(status %d)，可能模型未开通或有其他错误: %s",
+			serviceName, resp.StatusCode, bodyPreview)
+	}
+	return nil
+}
+
+// TestConnectionAll 测试火山引擎文本、图片、视频三个模型，均返回 404 才能保存
+// 使用不存在的 model 发轻量请求：鉴权通过+模型不存在 → 404；鉴权失败 → 401/403
+func (s *AIService) TestConnectionAll(req *TestConnectionAllRequest) error {
+	req.APIKey = strings.TrimSpace(req.APIKey)
+	if req.Provider != "doubao" && req.Provider != "volcengine" && req.Provider != "volces" {
+		return fmt.Errorf("test-all 仅支持火山引擎(doubao/volcengine/volces)，其他厂商请使用单个测试")
+	}
+
+	baseURL := req.BaseURL
+	apiKey := req.APIKey
+	invalidModel := "invalid_model_conn_test_001"
+
+	tests := []struct {
+		endpoint    string
+		body        string
+		serviceName string
+	}{
+		{
+			"/chat/completions",
+			`{"model":"` + invalidModel + `","messages":[{"role":"user","content":"hi"}],"max_tokens":1}`,
+			"文本(doubao)",
+		},
+		{
+			"/images/generations",
+			`{"model":"` + invalidModel + `","prompt":"x","size":"1K","response_format":"url"}`,
+			"图片(seedream)",
+		},
+		{
+			"/contents/generations/tasks",
+			`{"model":"` + invalidModel + `","content":[{"type":"text","text":"test"}],"generate_audio":false}`,
+			"视频(seedance)",
+		},
+	}
+
+	for _, t := range tests {
+		if err := s.testVolcEndpoint(baseURL, apiKey, t.endpoint, t.body, t.serviceName); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *AIService) GetDefaultConfig(serviceType string) (*models.AIServiceConfig, error) {
@@ -347,8 +448,8 @@ func (s *AIService) configFromEnv(serviceType string) *models.AIServiceConfig {
 	}
 	if baseURL == "" {
 		switch provider {
-		case "doubao", "volcengine":
-			baseURL = "https://ark.cn-beijing.volces.com/api"
+		case "doubao", "volcengine", "volces":
+			baseURL = "https://ark.cn-beijing.volces.com/api/v3"
 		default:
 			baseURL = "https://api.openai.com"
 		}

@@ -22,10 +22,12 @@ type JWTConfig struct {
 }
 
 type AppConfig struct {
-	Name     string `mapstructure:"name"`
-	Version  string `mapstructure:"version"`
-	Debug    bool   `mapstructure:"debug"`
-	Language string `mapstructure:"language"` // zh 或 en
+	Name            string `mapstructure:"name"`
+	Version         string `mapstructure:"version"`
+	Debug           bool   `mapstructure:"debug"`
+	Language        string `mapstructure:"language"` // zh 或 en
+	DefaultAdminEmail    string `mapstructure:"default_admin_email"`    // 默认管理员邮箱，首次启动时创建
+	DefaultAdminPassword string `mapstructure:"default_admin_password"` // 默认管理员密码
 }
 
 type ServerConfig struct {

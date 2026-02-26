@@ -28,7 +28,7 @@ def main():
     secret_id = os.environ.get("COS_SECRET_ID") or cfg.get("COS_SECRET_ID", "")
     secret_key = os.environ.get("COS_SECRET_KEY") or cfg.get("COS_SECRET_KEY", "")
     region = os.environ.get("COS_REGION") or cfg.get("COS_REGION", "ap-shanghai")
-    bucket = os.environ.get("COS_BUCKET") or cfg.get("COS_BUCKET", "cinemaker-1300086205")
+    bucket = os.environ.get("COS_BUCKET") or cfg.get("COS_BUCKET", "your-bucket-name")
 
     if not secret_id or not secret_key:
         print("错误: 缺少 COS 密钥")

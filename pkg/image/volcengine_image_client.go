@@ -186,6 +186,12 @@ func (c *VolcEngineImageClient) GetTaskStatus(taskID string) (*ImageResult, erro
 	return nil, fmt.Errorf("not supported for VolcEngine Seedream (synchronous generation)")
 }
 
+// TestConnection 测试 Seedream 图片 API 连通性，使用最小请求验证 API Key
+func (c *VolcEngineImageClient) TestConnection() error {
+	_, err := c.GenerateImage("a red circle", WithSize("1K"))
+	return err
+}
+
 // resolveVolcEngineSize 处理 size 参数。
 // 官方文档支持两种互斥方式：
 //   - 分辨率档位: "1K", "2K", "4K"

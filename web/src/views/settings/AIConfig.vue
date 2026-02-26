@@ -1,8 +1,9 @@
 <template>
-  <div class="page-container">
+  <div class="page-container" :class="{ 'embedded': embedded }">
     <div class="content-wrapper animate-fade-in">
-      <!-- Page Header / 页面头部 -->
+      <!-- Page Header / 页面头部（嵌入模式下简化） -->
       <PageHeader
+        v-if="!embedded"
         :title="$t('aiConfig.title')"
         :subtitle="$t('aiConfig.subtitle') || '管理 AI 服务配置'"
         :show-back="true"
@@ -15,6 +16,38 @@
           </el-button>
         </template>
       </PageHeader>
+      <div v-else class="embedded-header">
+        <h3>{{ $t('aiConfig.title') }}</h3>
+        <el-button type="primary" @click="showCreateDialog">
+          <el-icon><Plus /></el-icon>
+          <span>{{ $t("aiConfig.addConfig") }}</span>
+        </el-button>
+      </div>
+
+      <!-- 模型开通说明 -->
+      <el-alert type="info" :closable="false" class="guide-alert">
+        <template #title>
+          <span class="guide-title">需开通的模型</span>
+        </template>
+        <p class="guide-desc">使用前请先在 <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey" target="_blank">API Key 管理</a> 创建 Key，在开通管理开通以下模型，并填写 API Key。配置完成后可点击「测试连接」验证连通度。</p>
+        <ul class="guide-list">
+          <li><strong>文本</strong>：<a href="https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement" target="_blank">火山方舟 Doubao</a> <code>doubao-1-5-pro-32k-250115</code></li>
+          <li><strong>图片</strong>：<a href="https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement?tab=ComputerVision" target="_blank">火山方舟 Seedream 4.0</a> <code>doubao-seedream-4-0-250828</code></li>
+          <li><strong>视频</strong>：<a href="https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement?tab=ComputerVision" target="_blank">火山方舟 Seedance 1.5 Pro</a> <code>doubao-seedance-1-5-pro-251215</code></li>
+        </ul>
+        <p class="guide-configured">
+          <strong>当前已配置：</strong>
+          <template v-if="configSummary.text || configSummary.image || configSummary.video">
+            <span v-if="configSummary.text">文本：{{ configSummary.text }}</span>
+            <span v-if="configSummary.image"> · 图片：{{ configSummary.image }}</span>
+            <span v-if="configSummary.video"> · 视频：{{ configSummary.video }}</span>
+          </template>
+          <span v-else class="guide-configured-empty">暂无，配置并保存后将显示在此</span>
+        </p>
+        <p class="guide-note">
+          同一 API Key 可同时用于文本、图片、视频。Base URL 固定为 <code>https://ark.cn-beijing.volces.com/api/v3</code>。推荐将 API Key 配置在环境变量中，避免泄露。
+        </p>
+      </el-alert>
 
       <!-- Tabs / 标签页 -->
       <div class="tabs-wrapper">
@@ -27,6 +60,7 @@
             <ConfigList
               :configs="configs"
               :loading="loading"
+              :show-actions="true"
               :show-test-button="true"
               @edit="handleEdit"
               @delete="handleDelete"
@@ -39,10 +73,12 @@
             <ConfigList
               :configs="configs"
               :loading="loading"
-              :show-test-button="false"
+              :show-actions="true"
+              :show-test-button="true"
               @edit="handleEdit"
               @delete="handleDelete"
               @toggle-active="handleToggleActive"
+              @test="handleTest"
             />
           </el-tab-pane>
 
@@ -50,10 +86,12 @@
             <ConfigList
               :configs="configs"
               :loading="loading"
-              :show-test-button="false"
+              :show-actions="true"
+              :show-test-button="true"
               @edit="handleEdit"
               @delete="handleDelete"
               @toggle-active="handleToggleActive"
+              @test="handleTest"
             />
           </el-tab-pane>
         </el-tabs>
@@ -63,93 +101,113 @@
       <el-dialog
         v-model="dialogVisible"
         :title="isEdit ? $t('aiConfig.editConfig') : $t('aiConfig.addConfig')"
-        width="600px"
+        width="520px"
         :close-on-click-modal="false"
+        class="ai-config-dialog"
       >
         <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-          <el-form-item :label="$t('aiConfig.form.name')" prop="name">
-            <el-input
-              v-model="form.name"
-              :placeholder="$t('aiConfig.form.namePlaceholder')"
-            />
-          </el-form-item>
-
-          <el-form-item :label="$t('aiConfig.form.provider')" prop="provider">
-            <el-select
-              v-model="form.provider"
-              :placeholder="$t('aiConfig.form.providerPlaceholder')"
-              @change="handleProviderChange"
-              style="width: 100%"
-            >
-              <el-option
-                v-for="provider in availableProviders"
-                :key="provider.id"
-                :label="provider.name"
-                :value="provider.id"
-                :disabled="provider.disabled"
+          <!-- 火山引擎：简洁模式，只需 API Key -->
+          <template v-if="isVolcSimpleMode">
+            <el-alert type="info" :closable="false" class="simple-mode-tip">
+              火山引擎同一 API Key 可用于文本、图片、视频。保存将一次性创建三条配置（Doubao、Seedream、Seedance）。
+            </el-alert>
+            <el-form-item label="API Key" prop="api_key">
+              <el-input
+                v-model="form.api_key"
+                type="password"
+                show-password
+                placeholder="在 API Key 管理创建"
+                clearable
               />
-            </el-select>
-            <div class="form-tip">{{ $t("aiConfig.form.providerTip") }}</div>
-          </el-form-item>
+              <div class="form-tip">
+                在 <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey" target="_blank">API Key 管理</a> 创建。<br />
+                API Key 在 API Key 管理中创建。<br />
+                Base URL 固定为 <code>https://ark.cn-beijing.volces.com/api/v3</code>，已自动配置。
+              </div>
+            </el-form-item>
+          </template>
 
-          <el-form-item :label="$t('aiConfig.form.priority')" prop="priority">
-            <el-input-number
-              v-model="form.priority"
-              :min="0"
-              :max="100"
-              :step="1"
-              style="width: 100%"
-            />
-            <div class="form-tip">{{ $t("aiConfig.form.priorityTip") }}</div>
-          </el-form-item>
-
-          <el-form-item :label="$t('aiConfig.form.model')" prop="model">
-            <el-select
-              v-model="form.model"
-              :placeholder="$t('aiConfig.form.modelPlaceholder')"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-              collapse-tags
-              collapse-tags-tooltip
-              style="width: 100%"
-            >
-              <el-option
-                v-for="model in availableModels"
-                :key="model"
-                :label="model"
-                :value="model"
+          <!-- 非火山引擎 或 编辑模式：完整表单 -->
+          <template v-else>
+            <el-form-item :label="$t('aiConfig.form.name')" prop="name">
+              <el-input
+                v-model="form.name"
+                :placeholder="$t('aiConfig.form.namePlaceholder')"
               />
-            </el-select>
-            <div class="form-tip">{{ $t("aiConfig.form.modelTip") }}</div>
-          </el-form-item>
-
-          <el-form-item :label="$t('aiConfig.form.baseUrl')" prop="base_url">
-            <el-input
-              v-model="form.base_url"
-              :placeholder="$t('aiConfig.form.baseUrlPlaceholder')"
-            />
-            <div class="form-tip">
-              {{ $t("aiConfig.form.baseUrlTip") }}
-              <br />
-              {{ $t("aiConfig.form.fullEndpoint") }}: {{ fullEndpointExample }}
-            </div>
-          </el-form-item>
-
-          <el-form-item :label="$t('aiConfig.form.apiKey')" prop="api_key">
-            <el-input
-              v-model="form.api_key"
-              type="password"
-              show-password
-              :placeholder="$t('aiConfig.form.apiKeyPlaceholder')"
-            />
-            <div class="form-tip">{{ $t("aiConfig.form.apiKeyTip") }}</div>
-          </el-form-item>
-
-          <el-form-item v-if="isEdit" :label="$t('aiConfig.form.isActive')">
-            <el-switch v-model="form.is_active" />
-          </el-form-item>
+            </el-form-item>
+            <el-form-item :label="$t('aiConfig.form.provider')" prop="provider">
+              <el-select
+                v-model="form.provider"
+                :placeholder="$t('aiConfig.form.providerPlaceholder')"
+                @change="handleProviderChange"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="provider in availableProviders"
+                  :key="provider.id"
+                  :label="provider.name"
+                  :value="provider.id"
+                  :disabled="provider.disabled"
+                />
+              </el-select>
+              <div class="form-tip">{{ $t("aiConfig.form.providerTip") }}</div>
+            </el-form-item>
+            <el-form-item :label="$t('aiConfig.form.priority')" prop="priority">
+              <el-input-number
+                v-model="form.priority"
+                :min="0"
+                :max="100"
+                :step="1"
+                style="width: 100%"
+              />
+              <div class="form-tip">{{ $t("aiConfig.form.priorityTip") }}</div>
+            </el-form-item>
+            <el-form-item :label="$t('aiConfig.form.model')" prop="model">
+              <el-select
+                v-model="form.model"
+                :placeholder="form.provider === 'custom' ? '手动输入 Model ID' : $t('aiConfig.form.modelPlaceholder')"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                collapse-tags
+                collapse-tags-tooltip
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="model in availableModels"
+                  :key="model"
+                  :label="model"
+                  :value="model"
+                />
+              </el-select>
+              <div class="form-tip">{{ $t("aiConfig.form.modelTip") }}</div>
+            </el-form-item>
+            <el-form-item :label="$t('aiConfig.form.baseUrl')" prop="base_url">
+              <el-input
+                v-model="form.base_url"
+                :placeholder="$t('aiConfig.form.baseUrlPlaceholder')"
+              />
+              <div class="form-tip">
+                {{ $t("aiConfig.form.baseUrlTip") }}
+                <br />
+                {{ $t("aiConfig.form.fullEndpoint") }}: {{ fullEndpointExample }}
+              </div>
+            </el-form-item>
+            <el-form-item :label="$t('aiConfig.form.apiKey')" prop="api_key">
+              <el-input
+                v-model="form.api_key"
+                type="password"
+                show-password
+                :placeholder="apiKeyPlaceholder"
+                clearable
+              />
+              <div class="form-tip">{{ apiKeyTip }}</div>
+            </el-form-item>
+            <el-form-item v-if="isEdit" :label="$t('aiConfig.form.isActive')">
+              <el-switch v-model="form.is_active" />
+            </el-form-item>
+          </template>
         </el-form>
 
         <template #footer>
@@ -157,14 +215,22 @@
             $t("common.cancel")
           }}</el-button>
           <el-button
-            v-if="form.service_type === 'text'"
             @click="testConnection"
             :loading="testing"
             >{{ $t("aiConfig.actions.test") }}</el-button
           >
-          <el-button type="primary" @click="handleSubmit" :loading="submitting">
-            {{ isEdit ? $t("common.save") : $t("common.create") }}
-          </el-button>
+          <el-tooltip :content="!testPassed ? '请先点击「测试连接」并全部通过后再保存' : ''" placement="top">
+            <span>
+              <el-button
+                type="primary"
+                @click="handleSubmit"
+                :loading="submitting"
+                :disabled="!testPassed"
+              >
+                {{ $t("common.save") }}
+              </el-button>
+            </span>
+          </el-tooltip>
         </template>
       </el-dialog>
     </div>
@@ -172,8 +238,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, reactive, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
+
+/** 嵌入模式：用于在 AI 日志页内嵌展示，隐藏返回按钮 */
+defineProps<{ embedded?: boolean }>();
 import {
   ElMessage,
   ElMessageBox,
@@ -195,13 +264,19 @@ const router = useRouter();
 
 const activeTab = ref<AIServiceType>("text");
 const loading = ref(false);
-const configs = ref<AIServiceConfig[]>([]);
+const configsAll = ref<AIServiceConfig[]>([]);
+const configs = computed(() =>
+  configsAll.value.filter((c) => c.service_type === activeTab.value),
+);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const editingId = ref<number>();
+const savedApiKeyMask = ref(""); // 编辑时已保存 Key 的掩码（前4位+****）
+const originalApiKeyForTest = ref(""); // 编辑时用于测试连接的原始 Key（不展示）
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
 const testing = ref(false);
+const testPassed = ref(false); // 测试通过后才能保存
 
 const form = reactive<
   CreateAIConfigRequest & { is_active?: boolean; provider?: string }
@@ -226,53 +301,39 @@ interface ProviderConfig {
 
 const providerConfigs: Record<AIServiceType, ProviderConfig[]> = {
   text: [
-    {
-      id: "openai",
-      name: "OpenAI",
-      models: ["gpt-5.2", "gemini-3-flash-preview"],
-    },
-    {
-      id: "gemini",
-      name: "Google Gemini",
-      models: ["gemini-2.5-pro", "gemini-3-flash-preview"],
-    },
+    { id: "doubao", name: "火山引擎/字节 Doubao", models: ["doubao-1-5-pro-32k-250115", "doubao-1-5-lite-32k-250115", "doubao-pro-32k"] },
+    { id: "openai", name: "OpenAI", models: ["gpt-4o", "gpt-4o-mini", "gpt-4"] },
+    { id: "gemini", name: "Google Gemini", models: ["gemini-2.0-flash", "gemini-1.5-pro"] },
+    { id: "custom", name: "自定义（手动输入）", models: [] },
   ],
   image: [
-    {
-      id: "volcengine",
-      name: "火山引擎 Seedream 4.0",
-      models: ["ep-20260217022745-6lcxv"],
-    },
+    { id: "volcengine", name: "火山引擎/字节 Seedream", models: ["doubao-seedream-4-0-250828", "doubao-seedream-4-5-251128"] },
+    { id: "openai", name: "OpenAI DALL-E", models: ["dall-e-3"] },
+    { id: "custom", name: "自定义（手动输入）", models: [] },
   ],
   video: [
-    {
-      id: "volces",
-      name: "火山引擎 Seedance 1.5 Pro",
-      models: ["ep-20260218045808-4lb26"],
-    },
+    { id: "volces", name: "火山引擎/字节 Seedance", models: ["doubao-seedance-1-5-pro-251215"] },
+    { id: "openai", name: "OpenAI Sora", models: ["sora-1.0"] },
+    { id: "custom", name: "自定义（手动输入）", models: [] },
   ],
 };
 
-// 当前可用的厂商列表（只显示有激活配置的）
-const availableProviders = computed(() => {
-  // 获取当前service_type下所有激活的配置
-  const activeConfigs = configs.value.filter(
-    (c) => c.service_type === form.service_type && c.is_active,
-  );
-
-  // 提取所有激活配置的provider，去重
-  const activeProviderIds = new Set(activeConfigs.map((c) => c.provider));
-
-  // 从providerConfigs中筛选出有激活配置的provider
-  const allProviders = providerConfigs[form.service_type] || [];
-  return allProviders.filter((p) => activeProviderIds.has(p.id));
+// 火山引擎简洁模式：新建时只需填 API Key，其余自动配置
+const isVolcSimpleMode = computed(() => {
+  if (isEdit.value) return false;
+  const p = form.provider;
+  return ["doubao", "volcengine", "volces"].includes(p);
 });
 
-// 当前可用的模型列表（从已激活的配置中获取）
+// 当前可用的厂商列表（新建时显示全部，编辑时显示全部）
+const availableProviders = computed(() => {
+  return providerConfigs[form.service_type] || [];
+});
+
+// 当前可用的模型列表（优先从已激活配置获取，否则用厂商预设）
 const availableModels = computed(() => {
   if (!form.provider) return [];
 
-  // 从已激活的配置中提取该 provider 的所有模型
   const activeConfigsForProvider = configs.value.filter(
     (c) =>
       c.provider === form.provider &&
@@ -280,13 +341,40 @@ const availableModels = computed(() => {
       c.is_active,
   );
 
-  // 提取所有模型，去重
   const models = new Set<string>();
   activeConfigsForProvider.forEach((config) => {
-    config.model.forEach((m) => models.add(m));
+    (Array.isArray(config.model) ? config.model : [config.model]).forEach((m) => models.add(m));
   });
 
-  return Array.from(models);
+  if (models.size > 0) return Array.from(models);
+
+  const provider = providerConfigs[form.service_type]?.find((p) => p.id === form.provider);
+  return provider?.models || [];
+});
+
+// API Key 占位符：编辑时显示已保存的掩码，新建时按厂商区分
+const apiKeyPlaceholder = computed(() => {
+  if (isEdit.value && savedApiKeyMask.value) {
+    return `${savedApiKeyMask.value}（已保存，输入新 Key 可修改，留空则不修改）`;
+  }
+  const p = form.provider;
+  if (p === "doubao" || p === "volcengine" || p === "volces") {
+    return "在 API Key 管理创建";
+  }
+  if (p === "openai") return "手动输入 API Key，格式 sk-xxxxxxxx";
+  if (p === "gemini" || p === "google") return "手动输入 API Key，格式 AIzaSyxxxxxxxx";
+  if (p === "custom") return "手动输入 API Key";
+  return "手动输入 API Key";
+});
+
+// API Key 提示文案
+const apiKeyTip = computed(() => {
+  const p = form.provider;
+  if (p === "doubao" || p === "volcengine" || p === "volces") {
+    return "字节跳动火山方舟 API Key，在 ark.volcengine.com 创建。同一 Key 可同时用于文本、图片、视频。";
+  }
+  if (p === "custom") return "自定义厂商：请手动输入 Base URL、API Key 和 Model ID。";
+  return "请在对应平台申请后，手动复制粘贴 API Key 到此框。";
 });
 
 // 完整端点示例
@@ -310,16 +398,12 @@ const fullEndpointExample = computed(() => {
       endpoint = "/images/generations";
     }
   } else if (serviceType === "video") {
-    if (
-      provider === "doubao" ||
-      provider === "volcengine" ||
-      provider === "volces"
-    ) {
+    if (provider === "doubao" || provider === "volcengine" || provider === "volces") {
       endpoint = "/contents/generations/tasks";
     } else if (provider === "openai") {
       endpoint = "/videos";
     } else {
-      endpoint = "/video/generations";
+      endpoint = "/video/generations"; // 自定义等默认 OpenAI 兼容格式
     }
   }
 
@@ -333,7 +417,24 @@ const rules: FormRules = {
     { required: true, message: "请输入 Base URL", trigger: "blur" },
     { type: "url", message: "请输入正确的 URL 格式", trigger: "blur" },
   ],
-  api_key: [{ required: true, message: "请输入 API Key", trigger: "blur" }],
+  api_key: [
+    {
+      required: true,
+      message: "请输入 API Key",
+      trigger: "blur",
+      validator: (_rule: unknown, value: string, callback: (err?: Error) => void) => {
+        if (isEdit.value && !value?.trim() && originalApiKeyForTest.value) {
+          callback(); // 编辑时留空表示不改，已有 Key 则通过
+          return;
+        }
+        if (value?.trim()) {
+          callback();
+          return;
+        }
+        callback(new Error("请输入 API Key"));
+      },
+    },
+  ],
   model: [
     {
       required: true,
@@ -355,13 +456,30 @@ const rules: FormRules = {
 const loadConfigs = async () => {
   loading.value = true;
   try {
-    configs.value = await aiAPI.list(activeTab.value);
+    configsAll.value = await aiAPI.list();
   } catch (error: any) {
     ElMessage.error(error.message || "加载失败");
   } finally {
     loading.value = false;
   }
 };
+
+// 当前已配置摘要（用于引导区展示，显示各类型第一个已激活配置）
+const configSummary = computed(() => {
+  const all = configsAll.value.filter((c) => c.is_active);
+  const textCfg = all.find((c) => c.service_type === "text");
+  const imgCfg = all.find((c) => c.service_type === "image");
+  const vidCfg = all.find((c) => c.service_type === "video");
+  const fmt = (c: AIServiceConfig) => {
+    const m = Array.isArray(c.model) ? c.model[0] : c.model;
+    return `${c.name}${m ? ` (${m})` : ""}`;
+  };
+  return {
+    text: textCfg ? fmt(textCfg) : "",
+    image: imgCfg ? fmt(imgCfg) : "",
+    video: vidCfg ? fmt(vidCfg) : "",
+  };
+});
 
 // 生成随机配置名称
 const generateConfigName = (
@@ -372,6 +490,10 @@ const generateConfigName = (
     openai: "OpenAI",
     gemini: "Gemini",
     google: "Google",
+    doubao: "火山引擎",
+    volcengine: "火山引擎",
+    volces: "火山引擎",
+    custom: "自定义",
   };
 
   const serviceNames: Record<AIServiceType, string> = {
@@ -392,28 +514,35 @@ const generateConfigName = (
 const showCreateDialog = () => {
   isEdit.value = false;
   editingId.value = undefined;
+  savedApiKeyMask.value = "";
+  originalApiKeyForTest.value = "";
+  testPassed.value = false;
   resetForm();
   form.service_type = activeTab.value;
-  // 默认选择 openai
-  form.provider = "openai";
-  // 设置默认 base_url
-  form.base_url = "https://api.openai.com/v1";
-  // 自动生成随机配置名称
-  form.name = generateConfigName("openai", activeTab.value);
+  const providers = providerConfigs[activeTab.value] || [];
+  const defaultProvider = providers[0]?.id || "openai";
+  form.provider = defaultProvider;
+  handleProviderChange();
+  form.name = generateConfigName(defaultProvider, activeTab.value);
   dialogVisible.value = true;
 };
 
 const handleEdit = (config: AIServiceConfig) => {
   isEdit.value = true;
   editingId.value = config.id;
+  testPassed.value = false; // 编辑时需重新测试
+  // 已保存的 Key 仅显示前4位，留空则不修改；原始 Key 用于测试连接
+  const raw = config.api_key || "";
+  savedApiKeyMask.value = raw.length >= 4 ? raw.slice(0, 4) + "****" : "****";
+  originalApiKeyForTest.value = raw;
 
   Object.assign(form, {
     service_type: config.service_type,
-    provider: config.provider || "openai", // 直接使用配置中的 provider，默认为 openai
+    provider: config.provider || "openai",
     name: config.name,
     base_url: config.base_url,
-    api_key: config.api_key,
-    model: Array.isArray(config.model) ? config.model : [config.model], // 统一转换为数组
+    api_key: "", // 编辑时留空，留空保存则不改；输入新 Key 则更新
+    model: Array.isArray(config.model) ? config.model : [config.model],
     priority: config.priority || 0,
     is_active: config.is_active,
   });
@@ -449,23 +578,47 @@ const handleToggleActive = async (config: AIServiceConfig) => {
   }
 };
 
+// 用于测试的 API Key：新建用表单值，编辑且未输入新 Key 时用已保存的
+const apiKeyForTest = computed(() =>
+  form.api_key?.trim() || (isEdit.value ? originalApiKeyForTest.value : ""),
+);
+
 const testConnection = async () => {
   if (!formRef.value) return;
+  const keyToTest = apiKeyForTest.value;
+  if (!keyToTest) {
+    ElMessage.warning("请输入 API Key");
+    return;
+  }
 
   const valid = await formRef.value.validate().catch(() => false);
   if (!valid) return;
 
   testing.value = true;
+  testPassed.value = false;
   try {
-    await aiAPI.testConnection({
-      base_url: form.base_url,
-      api_key: form.api_key,
-      model: form.model,
-      provider: form.provider,
-    });
-    ElMessage.success("连接测试成功！");
+    const isVolc = ["doubao", "volcengine", "volces"].includes(form.provider);
+    if (isVolc) {
+      await aiAPI.testConnectionAll({
+        base_url: form.base_url,
+        api_key: keyToTest,
+        provider: form.provider,
+      });
+      ElMessage.success("文本、图片、视频三个模型测试通过，可保存！");
+    } else {
+      await aiAPI.testConnection({
+        base_url: form.base_url,
+        api_key: keyToTest,
+        model: form.model,
+        provider: form.provider,
+        service_type: form.service_type,
+      });
+      ElMessage.success("连接测试成功！");
+    }
+    testPassed.value = true;
   } catch (error: any) {
-    ElMessage.error(error.message || "连接测试失败");
+    const msg = error?.response?.data?.error?.message || error?.message || "连接测试失败";
+    ElMessage.error(msg);
   } finally {
     testing.value = false;
   }
@@ -474,19 +627,44 @@ const testConnection = async () => {
 const handleTest = async (config: AIServiceConfig) => {
   testing.value = true;
   try {
-    await aiAPI.testConnection({
-      base_url: config.base_url,
-      api_key: config.api_key,
-      model: config.model,
-      provider: config.provider,
-    });
-    ElMessage.success("连接测试成功！");
+    const provider = config.provider || "";
+    const isVolc = ["doubao", "volcengine", "volces"].includes(provider);
+    if (isVolc) {
+      await aiAPI.testConnectionAll({
+        base_url: config.base_url,
+        api_key: config.api_key,
+        provider,
+      });
+      ElMessage.success("文本、图片、视频三个模型测试通过！");
+    } else {
+      await aiAPI.testConnection({
+        base_url: config.base_url,
+        api_key: config.api_key,
+        model: config.model,
+        provider,
+        service_type: config.service_type,
+      });
+      ElMessage.success("连接测试成功！");
+    }
   } catch (error: any) {
-    ElMessage.error(error.message || "连接测试失败");
+    const msg = error?.response?.data?.error?.message || error?.message || "连接测试失败";
+    ElMessage.error(msg);
   } finally {
     testing.value = false;
   }
 };
+
+const VOLC_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3";
+const volcSimpleConfigs: Array<{
+  service_type: AIServiceType;
+  provider: string;
+  model: string[];
+  namePrefix: string;
+}> = [
+  { service_type: "text", provider: "doubao", model: ["doubao-1-5-pro-32k-250115"], namePrefix: "火山方舟 Doubao" },
+  { service_type: "image", provider: "volcengine", model: ["doubao-seedream-4-0-250828"], namePrefix: "火山方舟 Seedream 4.0" },
+  { service_type: "video", provider: "volces", model: ["doubao-seedance-1-5-pro-251215"], namePrefix: "火山方舟 Seedance 1.5 Pro" },
+];
 
 const handleSubmit = async () => {
   if (!formRef.value) return;
@@ -501,16 +679,33 @@ const handleSubmit = async () => {
           name: form.name,
           provider: form.provider,
           base_url: form.base_url,
-          api_key: form.api_key,
           model: form.model,
           priority: form.priority,
           is_active: form.is_active,
         };
+        if (form.api_key?.trim()) {
+          updateData.api_key = form.api_key.trim();
+        }
         await aiAPI.update(editingId.value, updateData);
         ElMessage.success("更新成功");
+      } else if (isVolcSimpleMode.value) {
+        const apiKey = form.api_key?.trim() || (isEdit.value ? originalApiKeyForTest.value : "") || "";
+        for (const spec of volcSimpleConfigs) {
+          const name = `${spec.namePrefix}-${Math.floor(Math.random() * 10000).toString().padStart(4, "0")}`;
+          await aiAPI.create({
+            service_type: spec.service_type,
+            provider: spec.provider,
+            name,
+            base_url: VOLC_BASE_URL,
+            api_key: apiKey,
+            model: spec.model,
+            priority: 0,
+          });
+        }
+        ElMessage.success("文本、图片、视频三条配置已保存");
       } else {
         await aiAPI.create(form);
-        ElMessage.success("创建成功");
+        ElMessage.success("保存成功");
       }
 
       dialogVisible.value = false;
@@ -529,19 +724,31 @@ const handleTabChange = (tabName: string | number) => {
   loadConfigs();
 };
 
-const handleProviderChange = () => {
-  // 切换厂商时清空已选模型
-  form.model = [];
+watch(
+  () => [form.api_key, form.base_url, form.model, form.provider],
+  () => { testPassed.value = false; },
+  { deep: true }
+);
 
-  // 根据厂商自动设置默认 base_url
+const handleProviderChange = () => {
+  testPassed.value = false;
+
+  if (form.provider === "custom") {
+    form.model = [];
+    form.base_url = "";
+  } else {
+    const p = providerConfigs[form.service_type]?.find((x) => x.id === form.provider);
+    form.model = p?.models?.length ? [p.models[0]] : [];
+  }
+
   if (form.provider === "gemini" || form.provider === "google") {
     form.base_url = "https://generativelanguage.googleapis.com";
+  } else if (form.provider === "doubao" || form.provider === "volcengine" || form.provider === "volces") {
+    form.base_url = "https://ark.cn-beijing.volces.com/api/v3";
   } else {
-    // openai 等其他厂商
     form.base_url = "https://api.openai.com/v1";
   }
 
-  // 仅在新建配置时自动更新名称
   if (!isEdit.value) {
     form.name = generateConfigName(form.provider, form.service_type);
   }
@@ -614,9 +821,91 @@ onMounted(() => {
   margin: 0 auto;
 }
 
+.page-container.embedded {
+  min-height: auto;
+  padding: 0;
+}
+
+.embedded-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.embedded-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.simple-mode-tip {
+  margin-bottom: var(--space-4);
+}
+
 /* ========================================
    Tabs / 标签页 - 紧凑内边距
    ======================================== */
+.guide-alert {
+  margin-bottom: var(--space-4);
+}
+
+.guide-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.guide-desc {
+  margin: 0.5rem 0 0.75rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.guide-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.guide-list li {
+  margin-bottom: 0.25rem;
+}
+
+.guide-list a {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+
+.guide-list a:hover {
+  text-decoration: underline;
+}
+
+.guide-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.guide-note code {
+  background: var(--bg-secondary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.guide-configured {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.guide-configured-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .tabs-wrapper {
   background: var(--bg-card);
   border: 1px solid var(--border-primary);

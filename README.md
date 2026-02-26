@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/guides/images/cinemaker-logo.svg" alt="CineMaker Logo" width="860" />
+  <img src="https://github.com/chenweidu666.png" alt="CineMaker Logo" width="140" />
 </p>
 
 <p align="center">

@@ -57,22 +57,21 @@ CineMaker 用到以下火山引擎服务，请按需开通：
 
 ## 3. 申请 API 密钥（火山方舟）
 
-火山方舟是火山引擎的大模型服务平台，CineMaker 用到的文本、图片、视频模型都在这个平台上。
+火山方舟是火山引擎的大模型服务平台，CineMaker 用到的文本、图片、视频模型都在这个平台上。调用方舟平台模型需使用 API Key 鉴权。
 
-### 第一步：进入火山方舟
+### 第一步：获取 API Key
 
-访问 [火山方舟控制台](https://ark.volcengine.com/)，使用你的火山引擎账号登录。
+1. 打开并登录 [API Key 管理](https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey) 页面
+2. （可选）单击左上角 **账号全部资源** 下拉箭头，切换项目空间
+3. 单击 **创建 API Key** 按钮
+4. 在弹出框的 **名称** 文本框中确认/更改 API Key 名称（如"CineMaker"），单击创建
+5. **立即复制并保存** API Key（UUID 格式）
 
-### 第二步：创建 API Key
+> **重要**：API Key 创建后只显示一次，请务必立即复制保存到安全的地方。泄露 API Key 会导致模型用量被他人使用产生损失。建议配置到环境变量中而非硬编码进代码。
 
-1. 在左侧菜单中找到 **「API Key 管理」**
-2. 点击 **「创建 API Key」**
-3. 给 Key 取个名字（如"CineMaker"），点击创建
-4. **立即复制并保存** API Key（格式如 `ark-xxxxxxxxxxxx`）
+> **一个 Key 通用**：该 API Key 可同时用于文本、图片、视频所有模型，不需要为每个模型单独创建。
 
-> **重要**：API Key 创建后只显示一次，请务必立即复制保存到安全的地方。如果忘记了，只能重新创建。
-
-> **一个 Key 通用**：这个 API Key 可用于所有模型（文本、图片、视频），不需要为每个模型单独创建。
+> **说明**：API Key 创建于当前项目空间，仅支持访问该项目下的接入点。主账号下最多可创建 50 个 API Key。
 
 ### 第三步：开通模型
 
@@ -90,20 +89,22 @@ CineMaker 用到以下火山引擎服务，请按需开通：
 
 3. 每个模型开通后，记下它的 **Model ID**（模型标识符）
 
-> **如何找到 Model ID？** 在模型详情页面或推理接入点列表中可以看到，格式类似 `doubao-1.5-pro-32k`、`seedream-4.0` 等。
+> **如何找到 Model ID？** 在模型详情页面或推理接入点列表中可以看到，格式类似 `doubao-1-5-pro-32k-250115`、`seedream-4.0` 等。
 
 ### 第四步：记录你的配置信息
 
 把以下信息记录下来，后面在 CineMaker 中配置时会用到：
 
+> **推荐**：将 API Key 配置在环境变量中（如 `.env` 的 `TEXT_API_KEY`、`IMAGE_API_KEY`、`VIDEO_API_KEY`），而非硬编码进代码，可避免泄露导致配额被他人使用。参考 `.env.example`。
+
 | 信息 | 值 | 说明 |
 |------|------|------|
-| **API Key** | `ark-xxxxxxxxxxxx` | 第二步创建的，所有模型共用 |
+| **API Key** | 在控制台创建的 API Key | 第二步创建的，所有模型共用 |
 | **Base URL** | `https://ark.cn-beijing.volces.com/api/v3` | 固定值，直接复制 |
-| **文本模型 ID** | 如 `doubao-1.5-pro-32k` | Doubao 1.5 Pro 的 Model ID |
+| **文本模型 ID** | 如 `doubao-1-5-pro-32k-250115` | Doubao 1.5 Pro 的 Model ID |
 | **图片模型 ID** | 如 `seedream-4.0` | Seedream 4.0 的 Model ID |
 | **图片编辑模型 ID** | 如 `seededit-3.0` | Seededit 3.0 的 Model ID |
-| **视频模型 ID** | 如 `seedance-1.5-pro` | Seedance 1.5 Pro 的 Model ID |
+| **视频模型 ID** | 如 `doubao-seedance-1-5-pro-251215` | Seedance 1.5 Pro 的 Model ID |
 
 ---
 
@@ -123,8 +124,8 @@ CineMaker 用到以下火山引擎服务，请按需开通：
 | 服务类型 | 选择 **文本** |
 | 供应商 | 选择 **doubao** |
 | Base URL | `https://ark.cn-beijing.volces.com/api/v3` |
-| API Key | 填入你的 API Key（`ark-xxxx...`） |
-| 模型 | 填入文本模型 ID（如 `doubao-1.5-pro-32k`） |
+| API Key | 填入你的 API Key |
+| 模型 | 填入文本模型 ID（如 `doubao-1-5-pro-32k-250115`） |
 | 设为默认 | **开启** |
 
 > Endpoint 会根据供应商自动填充，无需手动输入。
@@ -156,7 +157,7 @@ CineMaker 用到以下火山引擎服务，请按需开通：
 | 供应商 | 选择 **doubao** |
 | Base URL | `https://ark.cn-beijing.volces.com/api/v3` |
 | API Key | 填入你的 API Key（同上） |
-| 模型 | 填入视频模型 ID（如 `seedance-1.5-pro`） |
+| 模型 | 填入视频模型 ID（如 `doubao-seedance-1-5-pro-251215`） |
 | 设为默认 | **开启** |
 
 ---
@@ -243,4 +244,4 @@ CineMaker 用到以下火山引擎服务，请按需开通：
 | 模型列表 | [全部可用模型](https://www.volcengine.com/docs/82379/1799865) |
 | 模型定价 | [计费说明](https://www.volcengine.com/docs/82379/1544106) |
 | Base URL 与鉴权 | [API 鉴权说明](https://www.volcengine.com/docs/82379/1298459) |
-| API Key 管理 | [获取 API Key](https://www.volcengine.com/docs/82379/1541594) |
+| API Key 管理 | [API Key 管理](https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey) / [文档](https://www.volcengine.com/docs/82379/1541594) |

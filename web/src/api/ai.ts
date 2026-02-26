@@ -9,9 +9,8 @@ import request from '../utils/request'
 
 export const aiAPI = {
   list(serviceType?: AIServiceType) {
-    return request.get<AIServiceConfig[]>('/ai-configs', {
-      params: { service_type: serviceType }
-    })
+    const params = serviceType != null && serviceType !== '' ? { service_type: serviceType } : {}
+    return request.get<AIServiceConfig[]>('/ai-configs', { params })
   },
 
   create(data: CreateAIConfigRequest) {
@@ -32,5 +31,9 @@ export const aiAPI = {
 
   testConnection(data: TestConnectionRequest) {
     return request.post('/ai-configs/test', data)
+  },
+
+  testConnectionAll(data: { base_url: string; api_key: string; provider: string }) {
+    return request.post<{ message: string }>('/ai-configs/test-all', data)
   }
 }

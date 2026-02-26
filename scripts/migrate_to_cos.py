@@ -20,8 +20,7 @@ STORAGE_PATH = PROJECT_ROOT / "data" / "storage"
 
 LOCAL_URL_PREFIXES = [
     "http://localhost:5678/static/",
-    "http://192.168.31.10:5678/static/",
-    "http://192.168.31.10:7860/static/",
+    "http://localhost:7860/static/",
 ]
 
 TABLES_TO_UPDATE = [
@@ -43,7 +42,7 @@ def init_cos_client():
     secret_id = os.environ.get("COS_SECRET_ID", "")
     secret_key = os.environ.get("COS_SECRET_KEY", "")
     region = os.environ.get("COS_REGION", "ap-shanghai")
-    bucket = os.environ.get("COS_BUCKET", "cinemaker-1300086205")
+    bucket = os.environ.get("COS_BUCKET", "your-bucket-name")
     cdn_url = os.environ.get("COS_CDN_URL", "")
 
     if not secret_id or not secret_key:

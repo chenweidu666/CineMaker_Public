@@ -3,6 +3,8 @@ app:
   version: "1.0.0"
   debug: true
   language: "zh" # 系统语言：zh(中文) 或 en(英文)
+  default_admin_email: "admin@example.com"   # 默认登录账号，首次启动时自动创建
+  default_admin_password: "admin123"       # 默认登录密码
 
 server:
   port: 5678

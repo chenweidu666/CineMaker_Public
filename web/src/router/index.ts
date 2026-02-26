@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
-const publicRoutes = ['/login', '/register']
+const publicRoutes = ['/login']
 
 const routes: RouteRecordRaw[] = [
   {
@@ -13,9 +13,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/register',
-    name: 'Register',
-    component: () => import('../views/auth/Register.vue'),
-    meta: { public: true }
+    redirect: '/login'
   },
   {
     path: '/',
@@ -78,11 +76,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/dashboard/AIMessageLog.vue')
   },
   {
-    path: '/video-analysis',
-    name: 'VideoAnalysis',
-    component: () => import('../views/video-analysis/VideoAnalysis.vue')
-  },
-  {
     path: '/team',
     name: 'TeamManagement',
     component: () => import('../views/team/TeamManagement.vue')
@@ -98,7 +91,7 @@ router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
 
   if (to.meta?.public || publicRoutes.includes(to.path)) {
-    if (userStore.isLoggedIn && (to.path === '/login' || to.path === '/register')) {
+    if (userStore.isLoggedIn && to.path === '/login') {
       next('/')
       return
     }

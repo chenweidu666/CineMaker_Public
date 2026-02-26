@@ -10,9 +10,9 @@
 set -e
 
 # ============ 配置 ============
-NAS_HOST="${NAS_HOST:-cw@192.168.31.10}"
-NAS_PROJECT_DIR="${NAS_PROJECT_DIR:-/home/cw/For-Work/2_项目经验/1_大模型/5_Agent/CineMaker}"
-IMAGE_NAME="cinemaker-cinemaker"
+NAS_HOST="${NAS_HOST:-user@your-nas}"
+NAS_PROJECT_DIR="${NAS_PROJECT_DIR:-~/CineMaker_Public}"
+IMAGE_NAME="cinemaker:latest"
 IMAGE_TAG="latest"
 TAR_FILE="cinemaker-image.tar.gz"
 DESKTOP_PATH="$HOME/Desktop/${TAR_FILE}"
@@ -102,4 +102,4 @@ ssh "${NAS_HOST}" bash -s <<REMOTE_SCRIPT
 REMOTE_SCRIPT
 
 ok "部署完成!"
-log "访问: http://192.168.31.10:7860"
+log "访问: http://localhost:7860"

@@ -52,14 +52,6 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="音频生成">
-        <el-switch
-          v-model="form.generate_audio"
-          active-text="开启"
-          inactive-text="关闭"
-        />
-        <div class="form-tip">开启后视频生成时将同步生成 BGM、音效和角色语音</div>
-      </el-form-item>
     </el-form>
 
     <template #footer>

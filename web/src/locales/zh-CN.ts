@@ -83,10 +83,10 @@ export default {
   },
   aiConfig: {
     title: 'AI 服务配置',
-    addConfig: '添加配置',
-    editConfig: '编辑配置',
+    addConfig: '配置API',
+    editConfig: '编辑 API',
     back: '返回',
-    empty: '暂无配置，点击添加配置开始使用',
+    empty: '暂无配置，点击配置API开始使用',
     enabled: '已启用',
     disabled: '已禁用',
     enable: '启用',

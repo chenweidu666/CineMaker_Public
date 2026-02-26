@@ -44,8 +44,10 @@ func main() {
 	}
 	logr.Info("Database tables migrated successfully")
 
-	// 兼容迁移：创建默认团队，回填 team_id
-	migrateDefaultTeam(db, logr)
+	// 兼容迁移：创建默认团队和默认管理员
+	migrateDefaultTeam(db, logr, cfg)
+	// 迁移旧默认邮箱 admin@localhost -> admin@example.com（修复邮箱格式校验）
+	migrateAdminEmail(db, logr)
 
 	// 初始化存储后端
 	var store storage.Storage
@@ -131,14 +133,14 @@ func main() {
 	logr.Info("Server exited")
 }
 
-func migrateDefaultTeam(db *gorm.DB, logr *logger.Logger) {
-	var teamCount int64
-	db.Model(&models.Team{}).Count(&teamCount)
-	if teamCount > 0 {
+func migrateDefaultTeam(db *gorm.DB, logr *logger.Logger, cfg *config.Config) {
+	var userCount int64
+	db.Model(&models.User{}).Count(&userCount)
+	if userCount > 0 {
 		return
 	}
 
-	logr.Info("No teams found, creating default team and admin user...")
+	logr.Info("No users found, creating default team and admin user...")
 
 	team := &models.Team{Name: "默认团队"}
 	if err := db.Create(team).Error; err != nil {
@@ -148,6 +150,12 @@ func migrateDefaultTeam(db *gorm.DB, logr *logger.Logger) {
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	if adminEmail == "" && cfg != nil && cfg.App.DefaultAdminEmail != "" {
+		adminEmail = cfg.App.DefaultAdminEmail
+	}
+	if adminPassword == "" && cfg != nil && cfg.App.DefaultAdminPassword != "" {
+		adminPassword = cfg.App.DefaultAdminPassword
+	}
 	if adminEmail != "" && adminPassword != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 		if err == nil {
@@ -172,5 +180,12 @@ func migrateDefaultTeam(db *gorm.DB, logr *logger.Logger) {
 		if result.RowsAffected > 0 {
 			logr.Infow("Backfilled team_id", "table", table, "rows", result.RowsAffected)
 		}
+	}
+}
+
+func migrateAdminEmail(db *gorm.DB, logr *logger.Logger) {
+	result := db.Model(&models.User{}).Where("email = ?", "admin@localhost").Update("email", "admin@example.com")
+	if result.RowsAffected > 0 {
+		logr.Infow("Migrated admin email", "from", "admin@localhost", "to", "admin@example.com")
 	}
 }

@@ -48,6 +48,7 @@ export interface TestConnectionRequest {
   api_key: string
   model: string | string[]  // 支持单个或多个模型
   provider?: string  // 厂商标识
+  service_type?: AIServiceType  // 服务类型，用于 image/video 测试时选用合适验证方式
   endpoint?: string
   query_endpoint?: string  // 异步查询端点（用于视频等异步任务）
 }

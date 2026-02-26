@@ -14,12 +14,9 @@
           <el-tag v-if="config.is_active" type="success" size="small">{{ $t('aiConfig.enabled') }}</el-tag>
           <el-tag v-else type="info" size="small">{{ $t('aiConfig.disabled') }}</el-tag>
         </div>
-        <div class="config-actions">
+        <div v-if="showActions" class="config-actions">
           <el-button v-if="showTestButton" text @click="$emit('test', config)" :icon="Connection">
             {{ $t('aiConfig.actions.test') }}
-          </el-button>
-          <el-button text @click="$emit('edit', config)" :icon="Edit">
-            {{ $t('common.edit') }}
           </el-button>
           <el-button 
             text 
@@ -98,11 +95,15 @@
 import { Connection, Edit, Delete } from '@element-plus/icons-vue'
 import type { AIServiceConfig } from '@/types/ai'
 
-defineProps<{
-  configs: AIServiceConfig[]
-  loading: boolean
-  showTestButton?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    configs: AIServiceConfig[]
+    loading: boolean
+    showTestButton?: boolean
+    showActions?: boolean
+  }>(),
+  { showActions: false, showTestButton: false }
+)
 
 defineEmits<{
   edit: [config: AIServiceConfig]

@@ -1,0 +1,2 @@
+# 仅用于 scripts/test_ark_api.py 火山方舟 API 测试
+volcengine-python-sdk[ark]>=1.0.100

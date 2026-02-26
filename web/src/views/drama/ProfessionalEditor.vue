@@ -2014,7 +2014,7 @@ const defaultModelCapabilities: Record<
   string,
   Omit<VideoModelCapability, "id" | "name" | "provider">
 > = {
-  "ep-20260218045808-4lb26": {
+  "doubao-seedance-1-5-pro-251215": {
     pricing: "有声¥0.016/无声¥0.008/千tokens",
     supportSingleImage: true,
     supportMultipleImages: true,

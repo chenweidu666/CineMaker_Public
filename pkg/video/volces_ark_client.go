@@ -82,6 +82,22 @@ func NewVolcesArkClient(baseURL, apiKey, model, endpoint, queryEndpoint string) 
 	}
 }
 
+// testImageURL 用于连通性测试的占位图（需公网可访问，火山服务端需能拉取）
+const testImageURL = "https://picsum.photos/1024/576"
+
+// TestConnection 测试 Seedance 视频 API 连通性，提交最小任务验证 API Key
+func (c *VolcesArkClient) TestConnection() error {
+	result, err := c.GenerateVideo(testImageURL, "test connection", WithDuration(3))
+	if err != nil {
+		return err
+	}
+	// 仅验证是否成功提交（拿到 task_id），无需等待视频生成完成
+	if result.TaskID == "" {
+		return fmt.Errorf("未返回任务ID")
+	}
+	return nil
+}
+
 // GenerateVideo 生成视频（支持首帧、首尾帧、参考图等多种模式）
 func (c *VolcesArkClient) GenerateVideo(imageURL, prompt string, opts ...VideoOption) (*VideoResult, error) {
 	options := &VideoOptions{

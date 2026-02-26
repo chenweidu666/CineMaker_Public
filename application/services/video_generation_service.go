@@ -1106,7 +1106,7 @@ func (s *VideoGenerationService) ChainGenerateVideosForEpisode(req *ChainGenerat
 	}
 	model := req.Model
 	if model == "" {
-		model = "ep-20260218045808-4lb26"
+		model = "doubao-seedance-1-5-pro-251215"
 	}
 
 	// 如果请求未指定 generate_audio，从 Drama 配置读取

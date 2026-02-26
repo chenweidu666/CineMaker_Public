@@ -34,6 +34,10 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="ai-logs">
+                  <el-icon><ChatDotRound /></el-icon>
+                  AI 日志
+                </el-dropdown-item>
                 <el-dropdown-item command="team">
                   <el-icon><OfficeBuilding /></el-icon>
                   团队管理
@@ -54,7 +58,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Sunny, Moon, UserFilled, OfficeBuilding, SwitchButton } from '@element-plus/icons-vue'
+import { Sunny, Moon, UserFilled, OfficeBuilding, SwitchButton, ChatDotRound } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 /**
@@ -88,7 +92,9 @@ const appRouter = useRouter()
 const userStore = useUserStore()
 
 const handleUserCommand = (command: string) => {
-  if (command === 'team') {
+  if (command === 'ai-logs') {
+    appRouter.push('/ai-logs')
+  } else if (command === 'team') {
     appRouter.push('/team')
   } else if (command === 'logout') {
     userStore.logout()

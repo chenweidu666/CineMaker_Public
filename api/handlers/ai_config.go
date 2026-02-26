@@ -36,6 +36,13 @@ func (h *AIConfigHandler) CreateConfig(c *gin.Context) {
 		return
 	}
 
+	teamID, err := auth.MustGetTeamID(c)
+	if err != nil {
+		response.Unauthorized(c, "请先登录")
+		return
+	}
+	req.TeamID = &teamID
+
 	config, err := h.aiService.CreateConfig(&req)
 	if err != nil {
 		response.InternalError(c, "创建失败")
@@ -86,7 +93,8 @@ func (h *AIConfigHandler) ListConfigs(c *gin.Context) {
 	serviceType := c.Query("service_type")
 
 	var configs []models.AIServiceConfig
-	query := h.db.Model(&models.AIServiceConfig{}).Scopes(auth.TeamScope(teamID))
+	// 包含 team_id 匹配 或 team_id 为 NULL（旧数据兼容）
+	query := h.db.Model(&models.AIServiceConfig{}).Where("team_id = ? OR team_id IS NULL", teamID)
 	if serviceType != "" {
 		query = query.Where("service_type = ?", serviceType)
 	}
@@ -197,4 +205,19 @@ func (h *AIConfigHandler) TestConnection(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "连接测试成功"})
+}
+
+func (h *AIConfigHandler) TestConnectionAll(c *gin.Context) {
+	var req services.TestConnectionAllRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := h.aiService.TestConnectionAll(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "全部模型连通测试通过"})
 }
