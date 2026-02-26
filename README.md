@@ -1,16 +1,28 @@
-# CineMaker - AI 短剧制作平台
+<p align="center">
+  <img src="./docs/guides/images/cinemaker-logo.svg" alt="CineMaker Logo" width="860" />
+</p>
 
-基于 [火宝短剧（huobao-drama）](https://github.com/chatfire-AI/huobao-drama) 二次开发的全栈 AI 短剧制作工具，从剧本到成片的一站式生产流程。
+<p align="center">
+  全栈 AI 短剧制作工具 · 从剧本到成片的一站式生产流程
+</p>
+
+<p align="center">
+  <a href="https://furalike.cn/cinemaker/"><strong>在线体验 Demo</strong></a> ·
+  <a href="https://furalike.cn/blog/posts/cinemaker-workflow/"><strong>工作流程详解</strong></a> ·
+  <a href="docs/guides/images/episode-1_compressed.mov"><strong>第一集演示视频</strong></a>
+</p>
+
+<p align="center">
+  <img src="./docs/guides/images/11-professional-editor.png" alt="CineMaker 专业编辑器效果展示" width="860" />
+</p>
+
+> 基于 [火宝短剧（huobao-drama）](https://github.com/chatfire-AI/huobao-drama) 二次开发。
 
 ## 效果展示
 
-**[成品视频：姜小卷的周一，普通又认真的打工人日常 - 小红书](https://www.xiaohongshu.com/discovery/item/6999f9390000000015031bfa?source=webshare&xhsshare=pc_web&xsec_token=AB1YeBV8FFISOWlMopLLgorOWiW83maPlho8zWFMxMoZU=&xsec_source=pc_share)**
-
-**[在线体验编辑器 Demo](https://furalike.cn/cinemaker/)** | **[工作流程详解](https://furalike.cn/blog/posts/cinemaker-workflow/)**
-
-[▶ 观看演示视频（docs/Final.mov）](docs/Final.mov)
-
-[▶ 第一集演示视频（压缩版）](docs/guides/images/episode-1_compressed.mov)
+- [成品视频：姜小卷的周一，普通又认真的打工人日常（小红书）](https://www.xiaohongshu.com/discovery/item/6999f9390000000015031bfa?source=webshare&xhsshare=pc_web&xsec_token=AB1YeBV8FFISOWlMopLLgorOWiW83maPlho8zWFMxMoZU=&xsec_source=pc_share)
+- [演示视频（docs/Final.mov）](docs/Final.mov)
+- [第一集演示视频（压缩版）](docs/guides/images/episode-1_compressed.mov)
 
 ## 核心特性
 
@@ -79,6 +91,10 @@ docker compose up -d --build
 - 前端：`http://localhost:3012`（Vite HMR）
 
 详细文档见 [docs/guides/](docs/guides/) 目录。
+
+## 联系方式
+
+- 作者邮箱：s514351508@gmail.com
 
 ## 开源说明（Public 版）
 
